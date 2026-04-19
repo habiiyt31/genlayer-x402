@@ -15,17 +15,18 @@ A library of **4 production-ready Intelligent Contracts** that bring the [HTTP 4
 - [What is this?](#what-is-this)
 - [The 4 Contracts](#the-4-contracts)
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Deployment Methods](#deployment-methods)
-  - [Method 1: CLI Direct (single contract)](#method-1-cli-direct-deployment)
-  - [Method 2: Deploy Script (all contracts at once)](#method-2-deploy-script-batch-all-4)
-  - [Method 3: GenLayer Studio (web UI)](#method-3-genlayer-studio-no-cli-needed)
+- [Installation](#installation)
+- [Deployment](#deployment)
+  - [Method 1: CLI Direct (Per Contract)](#method-1-cli-direct-per-contract)
+  - [Method 2: Batch Deploy Script](#method-2-batch-deploy-script-all-4-at-once)
+  - [Method 3: GenLayer Studio](#method-3-genlayer-studio)
 - [Interacting with Contracts](#interacting-with-deployed-contracts)
 - [Contract API Reference](#contract-api-reference)
-- [Testing & Linting](#testing--linting)
 - [Use Case Examples](#use-case-examples)
+- [Linting](#linting)
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
+- [Resources](#resources)
 
 ---
 
@@ -64,73 +65,69 @@ Following the [official GenLayer setup docs](https://docs.genlayer.com/developer
 
 ---
 
-## Quick Start
+## Installation
 
-### 1. Clone this repo
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/genlayer-x402.git
 cd genlayer-x402
 ```
 
-### 2. Install dependencies
+### 2. Install Python dependencies
 
 ```bash
-# Python dependencies (genlayer-test + genvm-linter)
 pip install -r requirements.txt
+```
 
-# GenLayer CLI (global)
+This installs `genvm-linter` for contract linting.
+
+### 3. Install GenLayer CLI (global)
+
+```bash
 npm install -g genlayer
+```
 
-# TypeScript dependencies (for deploy script)
+### 4. Install TypeScript deploy dependencies
+
+```bash
 npm install
 ```
 
-### 3. Start local environment (optional)
+This reads `package.json` and installs `genlayer-js` and related packages into `node_modules/`.
 
-If you want to test on your machine first:
-
-```bash
-# Initialize GenLayer local environment (one-time)
-genlayer init
-
-# Start local GenLayer Studio
-genlayer up
-# Studio opens at http://localhost:8080
-```
-
-### 4. Lint the contracts
+### 5. Verify installation
 
 ```bash
-genvm-lint check contracts/x402_paywall.py
-genvm-lint check contracts/x402_metered.py
-genvm-lint check contracts/x402_subscription.py
-genvm-lint check contracts/x402_escrow.py
+genlayer --version
+genvm-lint --version
+node --version
+python --version
 ```
 
-All four should pass with ✓.
-
-### 5. Deploy!
-
-Pick one of the three deployment methods below ⬇
+All should print versions without errors.
 
 ---
 
-## Deployment Methods
+## Deployment
 
-GenLayer offers three ways to deploy contracts per the [official deployment docs](https://docs.genlayer.com/developers/intelligent-contracts/deploying/deployment-methods):
+GenLayer offers three ways to deploy contracts per the [official deployment docs](https://docs.genlayer.com/developers/intelligent-contracts/deploying/deployment-methods). Pick whichever fits your workflow.
 
-### Method 1: CLI Direct Deployment
+### Method 1: CLI Direct (Per Contract)
 
-**Best for:** single-contract deployments, quick iteration, testing.
+**Best for:** deploying one contract at a time, quick iteration, testing individual contracts.
 
-Follows the [CLI Deployment docs](https://docs.genlayer.com/developers/intelligent-contracts/deploying/cli-deployment). Syntax:
+This follows the [CLI Deployment docs](https://docs.genlayer.com/developers/intelligent-contracts/deploying/cli-deployment). The CLI will **interactively prompt** you for the constructor arguments.
+
+#### Set your target network first
 
 ```bash
-genlayer deploy --contract <contractPath>
-```
+# For local development (default)
+genlayer network set localnet
 
-The CLI will **interactively prompt** you for constructor arguments based on the contract's `__init__` signature.
+# For public testnet
+genlayer network set testnet-bradbury
+```
 
 #### Deploy X402Paywall
 
@@ -139,8 +136,11 @@ genlayer deploy --contract contracts/x402_paywall.py
 ```
 
 When prompted, enter:
-- `price_wei`: `100`
-- `data_url`: `https://api.coinbase.com/v2/prices/BTC-USD/spot`
+
+| Argument | Value |
+|---|---|
+| `price_wei` | `100` |
+| `data_url` | `https://api.coinbase.com/v2/prices/BTC-USD/spot` |
 
 #### Deploy X402Metered
 
@@ -149,9 +149,12 @@ genlayer deploy --contract contracts/x402_metered.py
 ```
 
 When prompted, enter:
-- `price_per_call_wei`: `10`
-- `data_url_prefix`: `https://api.coingecko.com/api/v3/simple/price?ids=`
-- `max_credits`: `1000`
+
+| Argument | Value |
+|---|---|
+| `price_per_call_wei` | `10` |
+| `data_url_prefix` | `https://api.coingecko.com/api/v3/simple/price?ids=` |
+| `max_credits` | `1000` |
 
 #### Deploy X402Subscription
 
@@ -160,9 +163,12 @@ genlayer deploy --contract contracts/x402_subscription.py
 ```
 
 When prompted, enter:
-- `price_per_period_wei`: `100`
-- `calls_per_period`: `50`
-- `data_url`: `https://api.github.com/repos/genlayerlabs/genlayer-project-boilerplate`
+
+| Argument | Value |
+|---|---|
+| `price_per_period_wei` | `100` |
+| `calls_per_period` | `50` |
+| `data_url` | `https://api.github.com/repos/genlayerlabs/genlayer-project-boilerplate` |
 
 #### Deploy X402Escrow
 
@@ -171,29 +177,14 @@ genlayer deploy --contract contracts/x402_escrow.py
 ```
 
 When prompted, enter:
-- `brief`: `Build a simple static HTML landing page with hero section and a contact form.`
 
-> ⚠️ The brief must be at least 20 characters long.
+| Argument | Value |
+|---|---|
+| `brief` | `Build a simple static HTML landing page with hero section and a contact form.` |
 
-#### Deploy to a specific network
+> ⚠️ The brief **must be at least 20 characters long** — the contract rejects shorter briefs.
 
-Before deploying, set the target network:
-
-```bash
-# Switch to testnet Bradbury
-genlayer network set testnet-bradbury
-
-# Then deploy as usual
-genlayer deploy --contract contracts/x402_paywall.py
-```
-
-Or use a custom RPC URL:
-
-```bash
-genlayer deploy --contract contracts/x402_paywall.py --rpc http://localhost:4000/api
-```
-
-#### Expected output
+#### Expected deployment output
 
 ```
 ✅ Contract deployed successfully!
@@ -201,29 +192,25 @@ Transaction Hash: 0x1234567890abcdef...
 Contract Address: 0xabcdef1234567890...
 ```
 
-Save the contract address — you'll need it to interact with the contract.
+**Save the contract address** — you'll need it to interact with the contract.
 
 ---
 
-### Method 2: Deploy Script (batch all 4)
+### Method 2: Batch Deploy Script (All 4 at Once)
 
-**Best for:** deploying all 4 contracts at once with pre-configured values, CI/CD, repeatable deployments.
+**Best for:** deploying all 4 contracts in sequence with default values, CI/CD pipelines, repeatable deployments.
 
-This project includes a ready-made deploy script at `deploy/deployScript.ts` that deploys all 4 contracts with sensible defaults.
+This repo includes `deploy/deployScript.ts` — a ready-made TypeScript batch deployer following the [Deploy Scripts docs](https://docs.genlayer.com/developers/intelligent-contracts/deploying/deploy-scripts).
 
-Run:
+Run it with:
 
 ```bash
 genlayer deploy
 ```
 
-This command automatically:
-1. Detects the `deploy/` folder
-2. Runs `deploy/deployScript.ts`
-3. Deploys all 4 contracts in sequence
-4. Prints addresses for each deployed contract
+The CLI auto-detects the `deploy/` folder and executes `deployScript.ts`, deploying all 4 contracts in sequence.
 
-Expected output:
+#### Expected output
 
 ```
 ═══════════════════════════════════════════════════
@@ -237,7 +224,18 @@ Expected output:
 
 📦 Deploying X402Metered...
 ✅ X402Metered deployed
-   ...
+   Transaction Hash: 0xdef...
+   Contract Address: 0x456...
+
+📦 Deploying X402Subscription...
+✅ X402Subscription deployed
+   Transaction Hash: 0x789...
+   Contract Address: 0xabc...
+
+📦 Deploying X402Escrow...
+✅ X402Escrow deployed
+   Transaction Hash: 0xdef...
+   Contract Address: 0x789...
 
 ═══════════════════════════════════════════════════
   ✅ All 4 contracts deployed successfully!
@@ -250,31 +248,41 @@ Expected output:
 }
 ```
 
-Want to change the default constructor values? Edit the `args` arrays in `deploy/deployScript.ts`.
+#### Customize constructor values
+
+Want to use different prices or URLs? Edit the `args` arrays in `deploy/deployScript.ts`. For example:
+
+```typescript
+const paywallAddress = await deployContract(
+  client,
+  "X402Paywall",
+  "contracts/x402_paywall.py",
+  [
+    500n,                                 // Change price to 500 wei
+    "https://your-custom-api.com/data",   // Change URL
+  ],
+);
+```
 
 ---
 
-### Method 3: GenLayer Studio (no CLI needed)
+### Method 3: GenLayer Studio
 
-**Best for:** beginners, visual exploration, one-off deployments.
+**Best for:** beginners, visual exploration, one-off deployments without CLI.
 
 Follows the [Studio deployment docs](https://docs.genlayer.com/developers/intelligent-contracts/tools/genlayer-studio/deploying-contract).
 
 1. Open [studio.genlayer.com](https://studio.genlayer.com) (hosted) or `http://localhost:8080` (local)
 2. Click **Load Contract**
-3. Paste the contract code (e.g., from `contracts/x402_paywall.py`)
+3. Copy-paste the contents of any `contracts/x402_*.py` file
 4. Click **Deploy**
-5. Fill in the constructor fields:
-   - `price_wei`: `100`
-   - `data_url`: `https://api.coinbase.com/v2/prices/BTC-USD/spot`
+5. Fill in the constructor fields (same values as Method 1)
 6. Click **Deploy Contract**
-7. Copy the shown transaction hash and contract address
+7. Copy the transaction hash and contract address
 
 ---
 
 ## Interacting with Deployed Contracts
-
-Once deployed, you can call contract methods via CLI, Studio, or JavaScript SDK.
 
 ### Via CLI
 
@@ -283,40 +291,42 @@ Following the [CLI Contracts API docs](https://docs.genlayer.com/api-references/
 #### Read methods (free, no transaction)
 
 ```bash
-# Read price from paywall
-genlayer call --address 0xYOUR_PAYWALL_ADDRESS --function get_price
+# Get the current access price
+genlayer call --address 0xYOUR_PAYWALL --function get_price
 
-# Check if user has access
-genlayer call --address 0xYOUR_PAYWALL_ADDRESS --function has_access --args 0xUSER_ADDRESS
+# Check if user has paid for access
+genlayer call --address 0xYOUR_PAYWALL --function has_access --args 0xUSER_ADDRESS
 
-# Get 402 payment info
-genlayer call --address 0xYOUR_PAYWALL_ADDRESS --function get_402_info
+# Get x402 protocol info
+genlayer call --address 0xYOUR_PAYWALL --function get_402_info
 ```
 
-#### Write methods (cost gas, may require value)
+#### Write methods (costs gas, can send value)
 
 ```bash
-# Pay for access (sends 100 wei with the call)
-genlayer write --address 0xYOUR_PAYWALL_ADDRESS --function pay_for_access --value 100
+# Pay 100 wei for access
+genlayer write --address 0xYOUR_PAYWALL --function pay_for_access --value 100
 
-# Fetch protected data (requires prior payment)
-genlayer write --address 0xYOUR_PAYWALL_ADDRESS --function get_protected_data
+# Fetch gated data (after paying)
+genlayer write --address 0xYOUR_PAYWALL --function get_protected_data
 
-# Buy credits in metered contract (send 100 wei = 10 credits)
-genlayer write --address 0xYOUR_METERED_ADDRESS --function buy_credits --value 100
+# Buy credits in the metered contract (sends 500 wei = 50 credits)
+genlayer write --address 0xYOUR_METERED --function buy_credits --value 500
 
-# Subscribe for 1 period
-genlayer write --address 0xYOUR_SUB_ADDRESS --function subscribe --args 1 --value 100
+# Execute a metered query
+genlayer write --address 0xYOUR_METERED --function execute_query --args "bitcoin&vs_currencies=usd"
+
+# Subscribe for 1 period (sends 100 wei)
+genlayer write --address 0xYOUR_SUB --function subscribe --args 1 --value 100
 ```
 
 ### Via Studio
 
-1. Open Studio at [studio.genlayer.com](https://studio.genlayer.com) or `http://localhost:8080`
-2. Paste your deployed contract address
-3. Use the **Read** and **Write** method panels
-4. For payable methods, set the `value` field in wei
+1. Open Studio → paste deployed contract address in the contract loader
+2. Use the **Read** and **Write** method panels
+3. For payable methods, set the `value` field (in wei)
 
-### Via JavaScript (GenLayerJS SDK)
+### Via JavaScript SDK
 
 See [GenLayerJS docs](https://docs.genlayer.com/api-references/genlayer-js):
 
@@ -326,16 +336,16 @@ import { testnetBradbury } from 'genlayer-js/chains';
 
 const client = createClient({ chain: testnetBradbury });
 
-// Read
+// Read example
 const price = await client.readContract({
-  address: '0xYOUR_PAYWALL_ADDRESS',
+  address: '0xYOUR_PAYWALL',
   functionName: 'get_price',
   args: [],
 });
 
-// Write with value
+// Write example with GEN value
 const txHash = await client.writeContract({
-  address: '0xYOUR_PAYWALL_ADDRESS',
+  address: '0xYOUR_PAYWALL',
   functionName: 'pay_for_access',
   args: [],
   value: 100n,
@@ -384,10 +394,10 @@ const txHash = await client.writeContract({
 | Parameter | Type | Description |
 |---|---|---|
 | `price_per_call_wei` | `u256` | Cost per API call |
-| `data_url_prefix` | `str` | URL prefix (query param appended) |
+| `data_url_prefix` | `str` | URL prefix (query param appended per call) |
 | `max_credits` | `u256` | Max credits per user (anti-abuse) |
 
-**Read methods (free):**
+**Read methods:**
 
 | Method | Returns | Description |
 |---|---|---|
@@ -435,7 +445,10 @@ const txHash = await client.writeContract({
 |---|---|---|
 | `brief` | `str` | Acceptance criteria (min 20 chars) |
 
-**State flow:** `OPEN → FUNDED → SUBMITTED → APPROVED/DISPUTED → RESOLVED`
+**State flow:**
+```
+OPEN → FUNDED → SUBMITTED → APPROVED/DISPUTED → RESOLVED
+```
 
 **Write methods:**
 
@@ -443,33 +456,9 @@ const txHash = await client.writeContract({
 |---|---|---|
 | `fund(freelancer)` | value > 0 | Client funds + assigns freelancer |
 | `submit_work(url, desc)` | args | Freelancer submits → AI evaluates |
-| `release_payment()` | 0 | Release funds to freelancer (if APPROVED) |
+| `release_payment()` | 0 | Release funds (if APPROVED) |
 | `client_approve()` | 0 | Client override approval |
-| `client_cancel()` | 0 | Client refund (if FUNDED, not submitted) |
-
----
-
-## Testing & Linting
-
-### Direct-mode tests (fast, no server)
-
-```bash
-pytest tests/direct/ -v
-```
-
-These tests run contracts in-memory without spinning up any GenLayer environment. See [Testing docs](https://docs.genlayer.com/developers/intelligent-contracts/testing).
-
-### Linting
-
-```bash
-genvm-lint check contracts/<contract_name>.py
-```
-
-The linter catches:
-- Forbidden imports (`os`, `sys`, `subprocess`)
-- Non-deterministic calls outside equivalence principle blocks
-- Invalid storage types (must use `TreeMap` / `DynArray`)
-- Missing decorators and return type annotations
+| `client_cancel()` | 0 | Client refund (if FUNDED) |
 
 ---
 
@@ -478,15 +467,14 @@ The linter catches:
 ### Example 1: Paid Bitcoin Price Feed
 
 ```bash
-# Deploy (as API provider)
+# As API provider — deploy
 genlayer deploy --contract contracts/x402_paywall.py
-# price_wei: 100
-# data_url: https://api.coinbase.com/v2/prices/BTC-USD/spot
+# Enter: price_wei=100, data_url=https://api.coinbase.com/v2/prices/BTC-USD/spot
 
-# User pays
+# As user — pay for access
 genlayer write --address 0xCONTRACT --function pay_for_access --value 100
 
-# User reads live price
+# As user — fetch the live BTC price
 genlayer write --address 0xCONTRACT --function get_protected_data
 # Returns: {"data":{"amount":"65000.42","currency":"USD"}}
 ```
@@ -496,22 +484,21 @@ genlayer write --address 0xCONTRACT --function get_protected_data
 ```bash
 # Deploy
 genlayer deploy --contract contracts/x402_metered.py
-# price_per_call_wei: 10, data_url_prefix: https://api.coingecko.com/...
 
-# Buy 50 credits (10 wei × 50 = 500 wei)
+# User buys 50 credits (10 wei × 50 = 500 wei total)
 genlayer write --address 0xCONTRACT --function buy_credits --value 500
 
-# Each query consumes 1 credit, returns AI summary
+# User runs metered query — each call costs 1 credit + AI summary
 genlayer write --address 0xCONTRACT --function execute_query --args "bitcoin&vs_currencies=usd"
 ```
 
 ### Example 3: Monthly Data Subscription
 
 ```bash
-# Deploy with 50 calls per period at 100 wei
+# Deploy with 50 calls per period at 100 wei each
 genlayer deploy --contract contracts/x402_subscription.py
 
-# Subscribe for 3 periods (3 × 100 = 300 wei → 150 calls)
+# Subscribe for 3 periods (300 wei → 150 total calls)
 genlayer write --address 0xCONTRACT --function subscribe --args 3 --value 300
 
 # Each get_data() consumes 1 call from quota
@@ -527,13 +514,34 @@ genlayer deploy --contract contracts/x402_escrow.py
 # Client funds + assigns freelancer (500 wei payment)
 genlayer write --address 0xCONTRACT --function fund --args 0xFREELANCER --value 500
 
-# Freelancer submits work → AI evaluates
+# Freelancer submits → GenLayer LLM validators auto-evaluate
 genlayer write --address 0xCONTRACT --function submit_work \
-  --args "https://github.com/bob/work" "Completed landing page with all sections"
+  --args "https://github.com/bob/work" "Completed landing page"
 
-# If AI approves → anyone triggers payment release
+# If AI approves → anyone can trigger payout to freelancer
 genlayer write --address 0xCONTRACT --function release_payment
 ```
+
+---
+
+## Linting
+
+Before deploying, always lint your contracts:
+
+```bash
+genvm-lint check contracts/x402_paywall.py
+genvm-lint check contracts/x402_metered.py
+genvm-lint check contracts/x402_subscription.py
+genvm-lint check contracts/x402_escrow.py
+```
+
+The linter catches:
+- Forbidden imports (`os`, `sys`, `subprocess`)
+- Non-deterministic calls outside equivalence principle blocks
+- Invalid storage types (must use `TreeMap` / `DynArray`)
+- Missing decorators and return type annotations
+
+See [GenVM Linter docs](https://docs.genlayer.com/api-references/genlayer-linter) for full reference.
 
 ---
 
@@ -542,42 +550,35 @@ genlayer write --address 0xCONTRACT --function release_payment
 ```
 genlayer-x402/
 │
-├── contracts/                       # Intelligent Contracts (Python)
-│   ├── x402_paywall.py              #   One-time payment
-│   ├── x402_metered.py              #   Per-call billing
-│   ├── x402_subscription.py         #   Quota-based access
-│   └── x402_escrow.py               #   AI-verified escrow
-│
-├── tests/
-│   └── direct/                      # Fast in-memory tests
-│       ├── test_paywall.py
-│       ├── test_metered.py
-│       ├── test_subscription.py
-│       └── test_escrow.py
+├── contracts/                   # Intelligent Contracts (Python)
+│   ├── x402_paywall.py          #   One-time payment
+│   ├── x402_metered.py          #   Per-call billing
+│   ├── x402_subscription.py     #   Quota-based access
+│   └── x402_escrow.py           #   AI-verified escrow
 │
 ├── deploy/
-│   └── deployScript.ts              # Batch deploy all 4 (Method 2)
+│   └── deployScript.ts          # Batch deploy all 4 (Method 2)
 │
-├── gltest.config.yaml               # Network + account config
-├── package.json                     # TypeScript deps
-├── tsconfig.json
-├── requirements.txt                 # Python deps
-├── README.md                        # This file
-├── LICENSE
-└── .gitignore
+├── .gitignore                   # Git ignore rules
+├── LICENSE                      # MIT License
+├── README.md                    # This file
+├── gltest.config.yaml           # GenLayer test config
+├── package.json                 # Node.js dependencies
+├── requirements.txt             # Python dependencies
+└── tsconfig.json                # TypeScript config
 ```
 
 ---
 
 ## Troubleshooting
 
-### `genvm-lint check` fails with "No contract class found"
+### Lint fails with "No contract class found"
 
-Make sure your contract class name is **specific** (e.g., `X402Paywall`), not generic (`Contract`). GenLayer requires named classes per the official examples.
+Your contract class name must be **specific** (e.g., `X402Paywall`), not generic (`Contract`). GenLayer requires named classes per the official examples. This is already the case for all contracts in this library.
 
 ### Lint fails with "gl.nondet.* call not reachable from equivalence principle block"
 
-Your `gl.nondet.web.get()` or `gl.nondet.exec_prompt()` call must be inside a function that's called by `gl.eq_principle.strict_eq()` or `gl.eq_principle.prompt_comparative()`. Example:
+Any `gl.nondet.web.get()` or `gl.nondet.exec_prompt()` call must be inside a function that's called by `gl.eq_principle.strict_eq()` or `gl.eq_principle.prompt_comparative()`:
 
 ```python
 def nondet() -> str:
@@ -587,17 +588,33 @@ def nondet() -> str:
 return gl.eq_principle.strict_eq(nondet)    # ✓ passed to eq_principle
 ```
 
-### "Insufficient balance" on testnet deploy
+### "Insufficient balance" when deploying to testnet
 
-Request test GEN from the [faucet](https://testnet-faucet.genlayer.foundation/) first.
+Request test GEN from the [testnet faucet](https://testnet-faucet.genlayer.foundation/) first.
 
-### `gl.block.number` error
+### TypeScript error `'receipt.data' is possibly 'undefined'` in deployScript
 
-GenLayer does not have block numbers in contracts. Use state machines or call counters instead — see `x402_subscription.py` for the quota pattern.
+The script uses optional chaining (`?.`) and type casting (`as any`) to handle this safely. This is a compile-time warning only — the deploy itself will work correctly.
 
-### Deploy script fails on Windows
+### Deploy script fails: `Cannot find module 'genlayer-js'`
 
-TypeScript deploys rely on `ts-node`. Make sure you ran `npm install` and have Node.js 18+ installed. Try `npm install` again if `genlayer deploy` doesn't pick up the script.
+Make sure you ran `npm install` in the project root directory. Check that `node_modules/` exists.
+
+### `git push` takes forever with CRLF warnings
+
+Your `node_modules/` folder was accidentally tracked. Fix it:
+
+```bash
+git rm -r --cached node_modules
+git config --global core.autocrlf true
+git add .gitignore
+git commit -m "chore: remove node_modules from tracking"
+git push origin main
+```
+
+### `gl.block.number` error when deploying
+
+GenLayer does not have block numbers inside contracts. Use state machines or call counters instead. This library uses the quota pattern in `x402_subscription.py` and state machines in `x402_escrow.py`.
 
 ---
 
@@ -606,10 +623,10 @@ TypeScript deploys rely on `ts-node`. Make sure you ran `npm install` and have N
 - 📖 [GenLayer Docs](https://docs.genlayer.com)
 - 📘 [GenLayer SDK Reference](https://sdk.genlayer.com)
 - 🎮 [GenLayer Studio (browser)](https://studio.genlayer.com)
+- 🔧 [GenVM Linter Docs](https://docs.genlayer.com/api-references/genlayer-linter)
 - 💧 [Testnet Faucet](https://testnet-faucet.genlayer.foundation/)
 - 📜 [x402 Protocol Spec](https://x402.org)
 - 🏆 [GenLayer Builder Program](https://portal.genlayer.foundation)
-- 💬 [GenLayer Discord](https://discord.gg/genlayer)
 
 ---
 
@@ -619,7 +636,7 @@ Issues and pull requests welcome! This library is open-source and community-driv
 
 1. Fork the repo
 2. Create your feature branch (`git checkout -b feature/amazing-thing`)
-3. Commit your changes (`git commit -m 'Add amazing thing'`)
+3. Commit your changes (`git commit -m 'feat: add amazing thing'`)
 4. Push to the branch (`git push origin feature/amazing-thing`)
 5. Open a Pull Request
 
@@ -628,7 +645,3 @@ Issues and pull requests welcome! This library is open-source and community-driv
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
-
----
-
-Built for the [GenLayer Builder Program](https://portal.genlayer.foundation) — Tools & Infrastructure category.
