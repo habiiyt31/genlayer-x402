@@ -1,53 +1,55 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+
 from genlayer import *
+
+import typing
+
 
 class X402Paywall(gl.Contract):
     """
-    genlayer-x402 :: Paywall Contract
-    ===================================
-    One-time payment gate. User pays once → permanent access.
-    Implements the x402 HTTP Payment Required protocol pattern
-    natively inside a GenLayer Intelligent Contract.
+    X402 Paywall — One-time payment gate for web data.
 
-    Use case: paid API endpoint, premium data feed, gated content.
+    User pays once in GEN → permanent access to protected data
+    fetched live from an external URL using GenLayer web access.
 
-    x402 Flow:
-        1. Client calls get_protected_data() without paying
-           → Contract returns 402-style error with price info
-        2. Client calls pay_for_access() with required GEN value
-           → Contract records payment, unlocks access
-        3. Client calls get_protected_data() again
-           → Contract fetches real-time data and returns it
-
-    Args (constructor):
-        price_wei (u256): Access price in wei (1 GEN = 10^18 wei)
-        data_url  (str):  URL the contract will fetch for paying users
+    This implements the HTTP 402 Payment Required pattern on-chain.
     """
 
     price_wei: u256
-    owner:     Address
-    data_url:  str
-    payments:  TreeMap[Address, u256]   # addr → total paid
+    owner: Address
+    data_url: str
+    payments: TreeMap[Address, u256]
     total_revenue: u256
 
     def __init__(self, price_wei: u256, data_url: str):
+        """
+        Initialize paywall contract.
+
+        Args:
+            price_wei (u256): Price for permanent access in wei
+            data_url  (str):  URL to fetch for paying users
+        """
         assert price_wei > u256(0), "Price must be greater than zero"
-        self.price_wei     = price_wei
-        self.owner         = gl.message.sender_address
-        self.data_url      = data_url
-        self.payments      = TreeMap()
+        assert len(data_url) > 0, "Data URL cannot be empty"
+
+        self.price_wei = price_wei
+        self.owner = gl.message.sender_address
+        self.data_url = data_url
         self.total_revenue = u256(0)
 
-    # ── READ ────────────────────────────────────────────────────────
+    # ── VIEW METHODS ──────────────────────────────────────────────
 
     @gl.public.view
     def get_price(self) -> u256:
-        """Return access price in wei."""
         return self.price_wei
 
     @gl.public.view
-    def get_owner(self) -> Address:
-        return self.owner
+    def get_owner(self) -> str:
+        return self.owner.as_hex
+
+    @gl.public.view
+    def get_data_url(self) -> str:
+        return self.data_url
 
     @gl.public.view
     def get_total_revenue(self) -> u256:
@@ -55,84 +57,67 @@ class X402Paywall(gl.Contract):
 
     @gl.public.view
     def has_access(self, user: Address) -> bool:
-        """Check if a user has paid enough for access."""
-        return self.payments.get(user, u256(0)) >= self.price_wei
+        paid = self.payments.get(user, u256(0))
+        return paid >= self.price_wei
 
     @gl.public.view
     def get_payment(self, user: Address) -> u256:
-        """Return total amount a user has paid."""
         return self.payments.get(user, u256(0))
 
     @gl.public.view
     def get_402_info(self) -> str:
-        """
-        Returns x402-compatible payment info.
-        Clients that receive a 402 error call this to learn
-        how much to pay and where.
-        """
-        return f'{{"price_wei": {self.price_wei}, "owner": "{self.owner}", "protocol": "x402-genlayer"}}'
+        """x402-compatible payment info for clients."""
+        return (
+            '{"price_wei": ' + str(self.price_wei) +
+            ', "owner": "' + self.owner.as_hex +
+            '", "protocol": "x402-genlayer", "type": "paywall"}'
+        )
 
-    # ── WRITE ───────────────────────────────────────────────────────
+    # ── WRITE METHODS ─────────────────────────────────────────────
 
     @gl.public.write.payable
     def pay_for_access(self) -> None:
         """
-        Send GEN to purchase access.
+        User sends GEN to purchase permanent access.
         gl.message.value must be >= price_wei.
-        Excess is accepted and recorded (no change returned).
         """
         sender = gl.message.sender_address
-        value  = gl.message.value
+        value = gl.message.value
 
         assert value >= self.price_wei, \
-            f"x402: Insufficient payment. Required {self.price_wei} wei, got {value} wei."
+            "x402: Insufficient payment. Required " + str(self.price_wei) + " wei."
 
         current = self.payments.get(sender, u256(0))
         self.payments[sender] = current + value
-        self.total_revenue    = self.total_revenue + value
+        self.total_revenue = self.total_revenue + value
 
-    @gl.public.view
-    def get_protected_data(self, user: Address) -> str:
+    @gl.public.write
+    def get_protected_data(self) -> typing.Any:
         """
-        Fetch and return real-time data from data_url.
-        Access is gated: user must have called pay_for_access() first.
-        Uses gl.get_webpage() — GenLayer's native web access.
+        Fetch and return data from data_url.
+        Requires payment from the caller first.
+        Uses Equivalence Principle for validator consensus.
         """
-        assert self.has_access(user), \
-            f"x402: Payment required. Price: {self.price_wei} wei. Call pay_for_access() first."
+        sender = gl.message.sender_address
+        assert self.has_access(sender), \
+            "x402: Payment required. Call pay_for_access() first."
 
-        def fetch() -> str:
-            raw = gl.get_webpage(self.data_url, mode="text")
-            return raw
+        def nondet() -> str:
+            response = gl.nondet.web.get(self.data_url)
+            return response.body.decode("utf-8")
 
-        return gl.eq_principle_strict_eq(fetch)
+        return gl.eq_principle.strict_eq(nondet)
 
     @gl.public.write
     def update_price(self, new_price: u256) -> None:
-        """Owner can update the access price."""
-        assert gl.message.sender_address == self.owner, "x402: Only owner can update price"
-        assert new_price > u256(0), "Price must be greater than zero"
+        """Owner can update price (does not affect existing buyers)."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner"
+        assert new_price > u256(0), "Price must be > 0"
         self.price_wei = new_price
 
     @gl.public.write
     def update_data_url(self, new_url: str) -> None:
-        """Owner can update the data URL."""
-        assert gl.message.sender_address == self.owner, "x402: Only owner can update URL"
+        """Owner can update data URL."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner"
         assert len(new_url) > 0, "URL cannot be empty"
         self.data_url = new_url
-
-    @gl.public.write
-    def withdraw(self, amount: u256) -> None:
-        """
-        Owner withdraws accumulated revenue from the contract.
-        Sends GEN to owner's EOA address.
-        """
-        assert gl.message.sender_address == self.owner, "x402: Only owner can withdraw"
-        assert amount <= self.balance, "x402: Insufficient contract balance"
-
-        @gl.evm.contract_interface
-        class _EOA:
-            class View: pass
-            class Write: pass
-
-        _EOA(self.owner).emit_transfer(value=amount)

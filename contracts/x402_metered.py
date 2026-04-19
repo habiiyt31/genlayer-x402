@@ -1,164 +1,167 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+
 from genlayer import *
+
+import typing
+
 
 class X402Metered(gl.Contract):
     """
-    genlayer-x402 :: Metered Billing Contract
-    ==========================================
-    Pay-per-call billing. Users buy credits, each API call
-    deducts one credit. Credits can be topped up at any time.
+    X402 Metered — Credit-based per-call billing.
 
-    Use case: AI inference billing, data API with usage limits,
-              per-query analytics service.
+    Users buy credits with GEN. Each API call deducts 1 credit.
+    When credits run out, user must top up to continue.
 
-    x402 Flow:
-        1. User calls buy_credits() with GEN → credits deposited
-        2. User calls execute_query() → 1 credit deducted, data returned
-        3. When credits run out → error with top-up instructions
-        4. User can check_credits() at any time
-
-    Args (constructor):
-        price_per_call_wei (u256): Cost per API call in wei
-        data_url           (str):  URL template for data fetching
-        max_credits        (u256): Max credits per user (anti-abuse)
+    Use cases: AI inference billing, pay-per-query analytics,
+    per-request data APIs.
     """
 
     price_per_call_wei: u256
-    owner:              Address
-    data_url:           str
-    max_credits:        u256
-    credits:            TreeMap[Address, u256]   # addr → remaining credits
-    call_count:         TreeMap[Address, u256]   # addr → total calls made
-    total_calls:        u256
-    total_revenue:      u256
+    owner: Address
+    data_url_prefix: str
+    max_credits: u256
+    credits: TreeMap[Address, u256]
+    call_count: TreeMap[Address, u256]
+    total_calls: u256
+    total_revenue: u256
 
-    def __init__(self, price_per_call_wei: u256, data_url: str, max_credits: u256):
-        assert price_per_call_wei > u256(0), "Price per call must be > 0"
-        assert max_credits > u256(0),         "Max credits must be > 0"
+    def __init__(
+        self,
+        price_per_call_wei: u256,
+        data_url_prefix: str,
+        max_credits: u256,
+    ):
+        """
+        Initialize metered billing contract.
+
+        Args:
+            price_per_call_wei (u256): Cost per single API call
+            data_url_prefix    (str):  URL prefix (query param appended)
+            max_credits        (u256): Max credits any user can accumulate
+        """
+        assert price_per_call_wei > u256(0), "Price must be > 0"
+        assert max_credits > u256(0), "Max credits must be > 0"
 
         self.price_per_call_wei = price_per_call_wei
-        self.owner              = gl.message.sender_address
-        self.data_url           = data_url
-        self.max_credits        = max_credits
-        self.credits            = TreeMap()
-        self.call_count         = TreeMap()
-        self.total_calls        = u256(0)
-        self.total_revenue      = u256(0)
+        self.owner = gl.message.sender_address
+        self.data_url_prefix = data_url_prefix
+        self.max_credits = max_credits
+        self.total_calls = u256(0)
+        self.total_revenue = u256(0)
 
-    # ── READ ────────────────────────────────────────────────────────
+    # ── VIEW METHODS ──────────────────────────────────────────────
 
     @gl.public.view
     def get_price_per_call(self) -> u256:
         return self.price_per_call_wei
 
     @gl.public.view
+    def get_max_credits(self) -> u256:
+        return self.max_credits
+
+    @gl.public.view
     def check_credits(self, user: Address) -> u256:
-        """Return remaining credits for a user."""
         return self.credits.get(user, u256(0))
 
     @gl.public.view
     def get_call_count(self, user: Address) -> u256:
-        """Return total calls made by a user."""
         return self.call_count.get(user, u256(0))
 
     @gl.public.view
-    def get_stats(self) -> str:
-        """Return global usage statistics."""
-        return f'{{"total_calls": {self.total_calls}, "total_revenue_wei": {self.total_revenue}, "price_per_call_wei": {self.price_per_call_wei}}}'
+    def get_total_calls(self) -> u256:
+        return self.total_calls
+
+    @gl.public.view
+    def get_total_revenue(self) -> u256:
+        return self.total_revenue
 
     @gl.public.view
     def get_402_info(self) -> str:
-        """x402-compatible payment info for new users."""
-        return f'{{"price_per_call_wei": {self.price_per_call_wei}, "owner": "{self.owner}", "protocol": "x402-genlayer-metered"}}'
+        return (
+            '{"price_per_call_wei": ' + str(self.price_per_call_wei) +
+            ', "max_credits": ' + str(self.max_credits) +
+            ', "owner": "' + self.owner.as_hex +
+            '", "protocol": "x402-genlayer", "type": "metered"}'
+        )
 
-    # ── WRITE ───────────────────────────────────────────────────────
+    # ── WRITE METHODS ─────────────────────────────────────────────
 
     @gl.public.write.payable
-    def buy_credits(self) -> u256:
+    def buy_credits(self) -> None:
         """
-        Buy credits by sending GEN.
-        Credits purchased = floor(value_sent / price_per_call_wei)
-        Remainder is accepted and credited to partial next call.
-        Returns number of credits purchased.
+        Purchase credits by sending GEN.
+        Credits = floor(value / price_per_call_wei).
         """
         sender = gl.message.sender_address
-        value  = gl.message.value
+        value = gl.message.value
 
         assert value >= self.price_per_call_wei, \
-            f"x402: Minimum purchase is {self.price_per_call_wei} wei (1 credit)."
+            "x402: Minimum is " + str(self.price_per_call_wei) + " wei (1 credit)"
 
         credits_to_add = value // self.price_per_call_wei
-        current        = self.credits.get(sender, u256(0))
-        new_total      = current + credits_to_add
+        current = self.credits.get(sender, u256(0))
+        new_total = current + credits_to_add
 
         assert new_total <= self.max_credits, \
-            f"x402: Would exceed max credits ({self.max_credits}). Current: {current}."
+            "x402: Would exceed max credits (" + str(self.max_credits) + ")"
 
-        self.credits[sender]   = new_total
-        self.total_revenue     = self.total_revenue + value
-        return credits_to_add
+        self.credits[sender] = new_total
+        self.total_revenue = self.total_revenue + value
 
     @gl.public.write
-    def execute_query(self, query_param: str) -> str:
+    def execute_query(self, query_param: str) -> typing.Any:
         """
-        Execute one metered API call.
-        Deducts 1 credit and fetches data from data_url + query_param.
-        Returns fetched data or raises error if no credits.
+        Execute one metered query. Deducts 1 credit.
+        Returns AI-summarized data from external URL.
         """
-        sender  = gl.message.sender_address
+        sender = gl.message.sender_address
         current = self.credits.get(sender, u256(0))
 
         assert current > u256(0), \
-            f"x402: No credits remaining. Buy credits via buy_credits(). Price: {self.price_per_call_wei} wei/call."
+            "x402: No credits. Buy via buy_credits(). Price: " + str(self.price_per_call_wei) + " wei/call"
 
-        # Deduct credit before fetching (prevent re-entrancy style issues)
-        self.credits[sender]  = current - u256(1)
-        self.total_calls      = self.total_calls + u256(1)
-        prev_count            = self.call_count.get(sender, u256(0))
-        self.call_count[sender] = prev_count + u256(1)
+        # Deduct credit BEFORE external call
+        self.credits[sender] = current - u256(1)
+        self.total_calls = self.total_calls + u256(1)
+        prev = self.call_count.get(sender, u256(0))
+        self.call_count[sender] = prev + u256(1)
 
-        url = self.data_url + query_param
+        def nondet() -> str:
+            url = self.data_url_prefix + query_param
+            response = gl.nondet.web.get(url)
+            raw_data = response.body.decode("utf-8")
 
-        def fetch() -> str:
-            data = gl.get_webpage(url, mode="text")
-            return gl.eq_principle_prompt_comparative(
-                lambda: gl.exec_prompt(
-                    f"Summarize this API response concisely: {data}"
-                )
+            # Truncate for LLM context limit
+            truncated = raw_data[:2000] if len(raw_data) > 2000 else raw_data
+
+            prompt = (
+                "Summarize this API response in 2-3 sentences. "
+                "Focus on the key data points only.\n\n"
+                "Response:\n" + truncated
             )
+            return gl.nondet.exec_prompt(prompt)
 
-        return fetch()
+        return gl.eq_principle.prompt_comparative(
+            nondet,
+            "The summaries should convey the same key information"
+        )
 
     @gl.public.write
     def update_price(self, new_price: u256) -> None:
-        """Owner can update price per call."""
         assert gl.message.sender_address == self.owner, "x402: Only owner"
         assert new_price > u256(0), "Price must be > 0"
         self.price_per_call_wei = new_price
 
     @gl.public.write
-    def refund_credits(self, user: Address) -> None:
-        """Owner can refund all credits for a user (for disputes)."""
+    def update_url_prefix(self, new_url: str) -> None:
         assert gl.message.sender_address == self.owner, "x402: Only owner"
-        remaining = self.credits.get(user, u256(0))
-        if remaining > u256(0):
-            refund_amount = remaining * self.price_per_call_wei
-            self.credits[user] = u256(0)
-
-            @gl.evm.contract_interface
-            class _EOA:
-                class View: pass
-                class Write: pass
-            _EOA(user).emit_transfer(value=refund_amount)
+        self.data_url_prefix = new_url
 
     @gl.public.write
-    def withdraw(self, amount: u256) -> None:
-        """Owner withdraws revenue."""
+    def grant_credits(self, user: Address, amount: u256) -> None:
+        """Owner can grant free credits (promo/testing)."""
         assert gl.message.sender_address == self.owner, "x402: Only owner"
-        assert amount <= self.balance, "x402: Insufficient balance"
-
-        @gl.evm.contract_interface
-        class _EOA:
-            class View: pass
-            class Write: pass
-        _EOA(self.owner).emit_transfer(value=amount)
+        current = self.credits.get(user, u256(0))
+        new_total = current + amount
+        assert new_total <= self.max_credits, "x402: Would exceed max"
+        self.credits[user] = new_total

@@ -1,0 +1,13 @@
+networks:
+  localnet:
+    accounts:
+      - "${ACCOUNT_PRIVATE_KEY_1}"
+  studionet:
+    accounts:
+      - "${ACCOUNT_PRIVATE_KEY_1}"
+  testnet_asimov:
+    accounts:
+      - "${ACCOUNT_PRIVATE_KEY_1}"
+  testnet_bradbury:
+    accounts:
+      - "${ACCOUNT_PRIVATE_KEY_1}"
