@@ -11,8 +11,7 @@ class X402Subscription(gl.Contract):
 
     User pays for N uses per period. Each use (get_data call)
     decrements the quota. User can top up anytime to extend.
-
-    Uses call-count quota model — more portable than block-based timing.
+    Owner can withdraw accumulated revenue via withdraw().
     """
 
     price_per_period_wei: u256
@@ -61,11 +60,13 @@ class X402Subscription(gl.Contract):
         return self.calls_per_period
 
     @gl.public.view
-    def get_remaining_calls(self, user: Address) -> u256:
+    def get_remaining_calls(self, user_address: str) -> u256:
+        user = Address(user_address)
         return self.remaining_calls.get(user, u256(0))
 
     @gl.public.view
-    def is_active(self, user: Address) -> bool:
+    def is_active(self, user_address: str) -> bool:
+        user = Address(user_address)
         return self.remaining_calls.get(user, u256(0)) > u256(0)
 
     @gl.public.view
@@ -79,6 +80,11 @@ class X402Subscription(gl.Contract):
     @gl.public.view
     def get_total_revenue(self) -> u256:
         return self.total_revenue
+
+    @gl.public.view
+    def get_contract_balance(self) -> u256:
+        """Current GEN balance held by the contract."""
+        return self.balance
 
     @gl.public.view
     def get_402_info(self) -> str:
@@ -148,12 +154,47 @@ class X402Subscription(gl.Contract):
         self.calls_per_period = new_count
 
     @gl.public.write
-    def grant_access(self, user: Address, periods: u256) -> None:
+    def grant_access(self, user_address: str, periods: u256) -> None:
         """Owner can grant free subscription."""
         assert gl.message.sender_address == self.owner, "x402: Only owner"
+        user = Address(user_address)
         current = self.remaining_calls.get(user, u256(0))
         was_new = current == u256(0)
         added = self.calls_per_period * periods
         self.remaining_calls[user] = current + added
         if was_new:
             self.subscriber_count = self.subscriber_count + u256(1)
+
+    @gl.public.write
+    def withdraw(self, amount: u256) -> None:
+        """Owner withdraws accumulated revenue from contract balance."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner can withdraw"
+        assert amount > u256(0), "Amount must be > 0"
+        assert amount <= self.balance, \
+            "x402: Insufficient balance. Available: " + str(self.balance)
+
+        @gl.evm.contract_interface
+        class _EOA:
+            class View:
+                pass
+            class Write:
+                pass
+
+        _EOA(self.owner).emit_transfer(value=amount)
+
+    @gl.public.write
+    def withdraw_all(self) -> None:
+        """Owner withdraws the entire contract balance."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner can withdraw"
+        assert self.balance > u256(0), "x402: Contract balance is zero"
+
+        amount = self.balance
+
+        @gl.evm.contract_interface
+        class _EOA:
+            class View:
+                pass
+            class Write:
+                pass
+
+        _EOA(self.owner).emit_transfer(value=amount)

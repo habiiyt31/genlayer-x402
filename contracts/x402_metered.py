@@ -11,9 +11,7 @@ class X402Metered(gl.Contract):
 
     Users buy credits with GEN. Each API call deducts 1 credit.
     When credits run out, user must top up to continue.
-
-    Use cases: AI inference billing, pay-per-query analytics,
-    per-request data APIs.
+    Owner can withdraw accumulated revenue via withdraw().
     """
 
     price_per_call_wei: u256
@@ -60,11 +58,13 @@ class X402Metered(gl.Contract):
         return self.max_credits
 
     @gl.public.view
-    def check_credits(self, user: Address) -> u256:
+    def check_credits(self, user_address: str) -> u256:
+        user = Address(user_address)
         return self.credits.get(user, u256(0))
 
     @gl.public.view
-    def get_call_count(self, user: Address) -> u256:
+    def get_call_count(self, user_address: str) -> u256:
+        user = Address(user_address)
         return self.call_count.get(user, u256(0))
 
     @gl.public.view
@@ -74,6 +74,11 @@ class X402Metered(gl.Contract):
     @gl.public.view
     def get_total_revenue(self) -> u256:
         return self.total_revenue
+
+    @gl.public.view
+    def get_contract_balance(self) -> u256:
+        """Current GEN balance held by the contract."""
+        return self.balance
 
     @gl.public.view
     def get_402_info(self) -> str:
@@ -131,7 +136,6 @@ class X402Metered(gl.Contract):
             response = gl.nondet.web.get(url)
             raw_data = response.body.decode("utf-8")
 
-            # Truncate for LLM context limit
             truncated = raw_data[:2000] if len(raw_data) > 2000 else raw_data
 
             prompt = (
@@ -158,10 +162,45 @@ class X402Metered(gl.Contract):
         self.data_url_prefix = new_url
 
     @gl.public.write
-    def grant_credits(self, user: Address, amount: u256) -> None:
+    def grant_credits(self, user_address: str, amount: u256) -> None:
         """Owner can grant free credits (promo/testing)."""
         assert gl.message.sender_address == self.owner, "x402: Only owner"
+        user = Address(user_address)
         current = self.credits.get(user, u256(0))
         new_total = current + amount
         assert new_total <= self.max_credits, "x402: Would exceed max"
         self.credits[user] = new_total
+
+    @gl.public.write
+    def withdraw(self, amount: u256) -> None:
+        """Owner withdraws accumulated revenue from contract balance."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner can withdraw"
+        assert amount > u256(0), "Amount must be > 0"
+        assert amount <= self.balance, \
+            "x402: Insufficient balance. Available: " + str(self.balance)
+
+        @gl.evm.contract_interface
+        class _EOA:
+            class View:
+                pass
+            class Write:
+                pass
+
+        _EOA(self.owner).emit_transfer(value=amount)
+
+    @gl.public.write
+    def withdraw_all(self) -> None:
+        """Owner withdraws the entire contract balance."""
+        assert gl.message.sender_address == self.owner, "x402: Only owner can withdraw"
+        assert self.balance > u256(0), "x402: Contract balance is zero"
+
+        amount = self.balance
+
+        @gl.evm.contract_interface
+        class _EOA:
+            class View:
+                pass
+            class Write:
+                pass
+
+        _EOA(self.owner).emit_transfer(value=amount)
