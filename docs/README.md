@@ -580,11 +580,11 @@ Each contract has its own detailed step-by-step testing guide in the `docs/` fol
 
 | Contract | Testing Guide | Est. Time |
 |---|---|---|
-| Overview + Setup | [docs/TESTING.md](./docs/TESTING.md) | 5 min read |
-| X402Paywall | [docs/test-paywall.md](./docs/test-paywall.md) | ~20 min |
-| X402Metered | [docs/test-metered.md](./docs/test-metered.md) | ~25 min |
-| X402Subscription | [docs/test-subscription.md](./docs/test-subscription.md) | ~30 min |
-| X402Escrow | [docs/test-escrow.md](./docs/test-escrow.md) | ~40 min |
+| Overview + Setup | [docs/TESTING.md](https://github.com/habiiyt31/genlayer-x402/blob/main/docs/TESTING.md) | 5 min read |
+| X402Paywall | [docs/test-paywall.md](https://github.com/habiiyt31/genlayer-x402/blob/main/docs/test-paywall.md) | ~20 min |
+| X402Metered | [docs/test-metered.md](https://github.com/habiiyt31/genlayer-x402/blob/main/docs/test-metered.md) | ~25 min |
+| X402Subscription | [docs/test-subscription.md](https://github.com/habiiyt31/genlayer-x402/blob/main/docs/test-subscription.md) | ~30 min |
+| X402Escrow | [docs/test-escrow.md](https://github.com/habiiyt31/genlayer-x402/blob/main/docs/test-escrow.md) | ~40 min |
 
 Each guide includes full workflow, error handling tests, and quick demo scripts.
 
@@ -655,7 +655,7 @@ git push origin main
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+See [CHANGELOG.md](https://github.com/habiiyt31/genlayer-x402/blob/main/CHANGELOG.md) for the full version history.
 
 ---
 
@@ -672,6 +672,3 @@ Issues and pull requests welcome!
 
 MIT — see [LICENSE](LICENSE).
 
----
-
-Built for the [GenLayer Builder Program](https://portal.genlayer.foundation) — Tools & Infrastructure category.
