@@ -112,7 +112,7 @@ Test all 4 contracts in order:
 3. [Subscription](./test-subscription.md) — Quota stacking mechanics
 4. [Escrow](./test-escrow.md) — Complex state machine + AI verdicts
 
-### For Code Review / Steward Demo
+### For Code Review
 
 Testing order:
 1. Start with Paywall (confidence builder)
@@ -163,18 +163,6 @@ A contract passes full testing if:
 
 ---
 
-## 📹 Recording Demos
-
-For Builder Program submission or community sharing:
-
-1. **OBS Studio** (free): Screen record Studio + voice
-2. **Loom** (free tier): Quick screen recording with narration
-3. **asciinema** (CLI): Record terminal sessions for code walkthroughs
-
-Recommended length: 5-10 minutes, upload to YouTube (unlisted) or Google Drive.
-
----
-
 ## 🔗 Related Resources
 
 - **Main README:** [../README.md](../README.md)
@@ -183,7 +171,3 @@ Recommended length: 5-10 minutes, upload to YouTube (unlisted) or Google Drive.
 - **GenLayer Docs:** https://docs.genlayer.com
 - **GenLayer Studio:** https://studio.genlayer.com
 - **x402 Protocol Spec:** https://x402.org
-
----
-
-Built for the [GenLayer Builder Program](https://portal.genlayer.foundation).
