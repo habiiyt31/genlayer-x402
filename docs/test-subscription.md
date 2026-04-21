@@ -16,6 +16,8 @@ Step-by-step testing guide for the X402Subscription contract — periodic quota-
 
 **Total methods:** 16 (9 view + 7 write)
 
+[Explorer for X402Subscription](https://explorer-studio.genlayer.com/address/0xF5acA4E3De0a76f2313d61b47478277C4F4B1DCB)
+
 ---
 
 ## 🏗️ Setup
@@ -341,23 +343,23 @@ Example timeline:
 
 | Test | Status |
 |---|---|
-| Deploy succeeds | ☐ |
-| Initial state correct (9 view methods) | ☐ |
-| Subscribe adds quota | ☐ |
-| Subscriber count increments | ☐ |
-| get_data fetches + decrements quota | ☐ |
-| Stacking works (subscribe again) | ☐ |
-| Subscriber count doesn't re-increment for same user | ☐ |
-| Owner can grant access | ☐ |
-| Owner can update price | ☐ |
-| Owner can update calls_per_period | ☐ |
-| New user via grant increments subscriber count | ☐ |
-| Subscribe 0 periods rejected | ☐ |
-| Insufficient value rejected | ☐ |
-| get_data without subscription rejected | ☐ |
-| Non-owner admin calls rejected | ☐ |
-| Exhausted quota → inactive | ☐ |
-| Withdraw works | ☐ |
+| Deploy succeeds | ✅ |
+| Initial state correct (9 view methods) | ✅ |
+| Subscribe adds quota | ✅ |
+| Subscriber count increments | ✅ |
+| get_data fetches + decrements quota | ✅ |
+| Stacking works (subscribe again) | ✅ |
+| Subscriber count doesn't re-increment for same user | ✅ |
+| Owner can grant access | ✅ |
+| Owner can update price | ✅ |
+| Owner can update calls_per_period | ✅ |
+| New user via grant increments subscriber count | ✅ |
+| Subscribe 0 periods rejected | ✅ |
+| Insufficient value rejected | ✅ |
+| get_data without subscription rejected | ✅ |
+| Non-owner admin calls rejected | ✅ |
+| Exhausted quota → inactive | ✅ |
+| Withdraw works | ✅ |
 
 ---
 

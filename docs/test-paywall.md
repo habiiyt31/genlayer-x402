@@ -16,6 +16,8 @@ Step-by-step testing guide for the X402Paywall contract — a one-time payment g
 
 **Total methods:** 14 (8 view + 6 write)
 
+[Explorer for X402Paywall](https://explorer-studio.genlayer.com/address/0xAA64689f85fE36C606338167ce7b8778329500e6)
+
 ---
 
 ## 🏗️ Setup
@@ -260,19 +262,19 @@ For presentation/demo, focus on these 8 steps:
 
 | Test | Status |
 |---|---|
-| Deploy succeeds | ☐ |
-| Initial state correct (8 view methods) | ☐ |
-| User can pay and get access | ☐ |
-| User can fetch protected data | ☐ |
-| Price update does NOT revoke access | ☐ |
-| Owner can update URL | ☐ |
-| Partial withdraw works | ☐ |
-| Full withdraw works | ☐ |
-| Non-owner cannot update price | ☐ |
-| Non-owner cannot withdraw | ☐ |
-| Insufficient payment rejected | ☐ |
-| Access required for data | ☐ |
-| Over-withdraw rejected | ☐ |
+| Deploy succeeds | ✅ |
+| Initial state correct (8 view methods) | ✅ |
+| User can pay and get access | ✅ |
+| User can fetch protected data | ✅ |
+| Price update does NOT revoke access | ✅ |
+| Owner can update URL | ✅ |
+| Partial withdraw works | ✅ |
+| Full withdraw works | ✅ |
+| Non-owner cannot update price | ✅ |
+| Non-owner cannot withdraw | ✅ |
+| Insufficient payment rejected | ✅ |
+| Access required for data | ✅ |
+| Over-withdraw rejected | ✅ |
 
 Tick each as you go through the test.
 

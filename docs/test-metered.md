@@ -17,6 +17,8 @@ Step-by-step testing guide for the X402Metered contract — credit-based pay-per
 
 **Total methods:** 15 (8 view + 7 write)
 
+[Explorer for X402Metered](https://explorer-studio.genlayer.com/address/0x9B653A3866d36fD9f704225ee4245BB22410559d)
+
 ---
 
 ## 🏗️ Setup
@@ -37,10 +39,12 @@ Load `x402_metered.py`, deploy with:
 | Field | Value | Meaning |
 |---|---|---|
 | `price_per_call_wei` | `1000000000000000000` | 1 GEN per call |
-| `data_url_prefix` | `https://api.github.com/users/` | URL prefix (query param appended) |
+| `data_url_prefix` | `https://api.coingecko.com/api/v3/simple/price?ids=` | CoinGecko crypto price API |
 | `max_credits` | `1000` | Max credits per user (anti-abuse) |
 
 Click **Deploy** → copy contract address.
+
+> 💡 **Why CoinGecko?** Free, no auth, no strict rate limits, small response size, and realistic use case for pay-per-query API billing. GitHub API works too but has stricter rate limits (60/hour without auth).
 
 ---
 
@@ -95,20 +99,20 @@ Click **Deploy** → copy contract address.
 #### Step 13: `execute_query(query_param)` — First Query
 
 - **Method:** `execute_query`
-- **Input:** `query_param`: `octocat`
+- **Input:** `query_param`: `bitcoin&vs_currencies=usd`
 - **Expected:**
   - Wait **30-90 seconds** (URL fetch + LLM summarize + consensus)
-  - Returns: AI-generated summary of GitHub API response
+  - Returns: AI-generated summary of Bitcoin price
 
 **Example output:**
 ```
-"The GitHub user 'octocat' (named 'The Octocat') has been a member since 
-January 2011. The profile shows public contributions at @github and is 
-based in San Francisco."
+"Bitcoin is currently trading at approximately $65,432.50 USD, based on 
+CoinGecko's aggregated exchange data. The response includes the current 
+price without additional market statistics."
 ```
 
 **Important:** Open **Node Logs** panel to watch:
-- Validators fetch URL: `https://api.github.com/users/octocat`
+- Validators fetch URL: `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd`
 - Each validator calls LLM with prompt
 - Consensus comparison: do summaries convey same info?
 
@@ -124,9 +128,9 @@ based in San Francisco."
 
 Repeat `execute_query` with different params:
 
-- `query_param`: `torvalds` → get Linus Torvalds data
-- `query_param`: `gvanrossum` → get Guido van Rossum data
-- `query_param`: `vitalik-buterin` → get Vitalik Buterin data
+- `query_param`: `ethereum&vs_currencies=usd` → ETH price
+- `query_param`: `solana&vs_currencies=usd,idr` → SOL in USD & IDR
+- `query_param`: `bitcoin,ethereum,solana&vs_currencies=usd` → 3 coins at once
 
 Each query:
 - ✅ Returns AI summary
@@ -163,10 +167,10 @@ Verify with `get_price_per_call()` → `"2000000000000000000"`.
 
 #### Step 21: `update_url_prefix(new_url)`
 
-Switch the API we query. Try CoinGecko instead:
+Switch the API we query. Try JSONPlaceholder (testing API, always reliable):
 
 - **Method:** `update_url_prefix`
-- **Input:** `new_url`: `https://api.coingecko.com/api/v3/simple/price?ids=`
+- **Input:** `new_url`: `https://jsonplaceholder.typicode.com/posts/`
 - **Expected:** ✅ Success
 
 #### Step 22: Test with New URL
@@ -174,13 +178,13 @@ Switch the API we query. Try CoinGecko instead:
 **[Switch to User account]**
 
 - **Method:** `execute_query`
-- **Input:** `query_param`: `bitcoin&vs_currencies=usd`
-- **Expected:** Wait 30-60s → AI summary of Bitcoin price
+- **Input:** `query_param`: `1`
+- **Expected:** Wait 30-60s → AI summary of post #1
 
 **Example output:**
 ```
-"Bitcoin is currently trading at approximately $65,432 USD, based on 
-CoinGecko's aggregated exchange data."
+"The post is titled 'sunt aut facere...' and describes a mock article 
+used for API testing. It's authored by user ID 1 and has post ID 1."
 ```
 
 ---
@@ -263,17 +267,17 @@ Focus on the AI-powered query for maximum impact:
 
 ```
 [Owner]
-1. Deploy with price=1 GEN, URL prefix=https://api.github.com/users/
+1. Deploy with price=1 GEN, URL prefix=https://api.coingecko.com/api/v3/simple/price?ids=
 
 [User]
 2. check_credits(user) → 0
 3. buy_credits()  Value: 5 → +5 credits ✅
 4. check_credits(user) → 5
 
-5. execute_query("octocat")  → wait 60s → AI summary ✅
+5. execute_query("bitcoin&vs_currencies=usd")  → wait 60s → AI summary of BTC price ✅
 6. check_credits(user) → 4
 
-7. execute_query("torvalds") → AI summary of Linus Torvalds
+7. execute_query("ethereum&vs_currencies=usd,idr") → ETH in USD and IDR
 8. get_total_calls() → 2
 
 [Owner]
@@ -281,8 +285,9 @@ Focus on the AI-powered query for maximum impact:
 ```
 
 **Key talking points:**
-- Step 5: "Contract fetches GitHub API on-chain, LLM summarizes the response, multiple validators reach consensus. All trustless."
+- Step 5: "Contract fetches CoinGecko API on-chain, LLM summarizes the response, multiple validators reach consensus. All trustless."
 - Step 6: "Each query automatically deducts 1 credit — transparent billing"
+- Step 7: "Multi-currency, multi-coin query — flexible API usage"
 - Step 9: "Owner can withdraw revenue anytime. No middleman holding funds."
 
 ---
@@ -291,14 +296,19 @@ Focus on the AI-powered query for maximum impact:
 
 After `update_url_prefix`, test with different public APIs:
 
-| API | URL Prefix | Example Query |
-|---|---|---|
-| CoinGecko (crypto) | `https://api.coingecko.com/api/v3/simple/price?ids=` | `bitcoin&vs_currencies=usd` |
-| GitHub Users | `https://api.github.com/users/` | `octocat` |
-| GitHub Repos | `https://api.github.com/repos/` | `genlayerlabs/genlayer-project-boilerplate` |
-| JSONPlaceholder | `https://jsonplaceholder.typicode.com/posts/` | `1` |
+| API | URL Prefix | Example Query | Reliability |
+|---|---|---|---|
+| **CoinGecko (default)** | `https://api.coingecko.com/api/v3/simple/price?ids=` | `bitcoin&vs_currencies=usd` | ⭐⭐⭐⭐⭐ |
+| **JSONPlaceholder** | `https://jsonplaceholder.typicode.com/posts/` | `1` | ⭐⭐⭐⭐⭐ |
+| Dog API | `https://dog.ceo/api/breed/` | `hound/images/random` | ⭐⭐⭐⭐ |
+| GitHub Repos | `https://api.github.com/repos/` | `genlayerlabs/genlayer-project-boilerplate` | ⭐⭐⭐ (60/hr limit) |
+| GitHub Users | `https://api.github.com/users/` | `octocat` | ⭐⭐⭐ (60/hr limit) |
 
-Tip: APIs that don't need auth work best. Avoid APIs with API keys.
+**Tips:**
+- APIs that don't need auth work best
+- Avoid APIs with API keys (contract can't store secrets safely)
+- Small JSON responses (<2KB) get better AI summaries
+- CoinGecko is the most reliable for production demos
 
 ---
 
@@ -306,51 +316,22 @@ Tip: APIs that don't need auth work best. Avoid APIs with API keys.
 
 | Test | Status |
 |---|---|
-| Deploy succeeds | ☐ |
-| Initial state correct (8 view methods) | ☐ |
-| User can buy credits | ☐ |
-| Credits reflect correctly | ☐ |
-| AI-powered query returns summary | ☐ |
-| Credits deduct per query | ☐ |
-| Call count increments | ☐ |
-| Owner can grant free credits | ☐ |
-| Owner can update price | ☐ |
-| Owner can update URL prefix | ☐ |
-| New URL works correctly | ☐ |
-| Underpay rejected | ☐ |
-| Max credits cap enforced | ☐ |
-| No credits → query rejected | ☐ |
-| Non-owner admin calls rejected | ☐ |
-| Withdraw works | ☐ |
-
----
-
-## 💡 Pro Tips
-
-### 1. AI Quality Depends on URL Content
-
-If `execute_query` returns junk summaries, the URL might return:
-- Too large content (gets truncated to 2000 chars)
-- Non-text content (images, binary)
-- Empty response
-
-Try GitHub APIs — they return clean JSON and AI summarizes them well.
-
-### 2. Monitor Consensus in Node Logs
-
-The logs show:
-- Leader validator's proposed summary
-- Other validators' summaries
-- Whether they semantically match (via `prompt_comparative`)
-- Final consensus result
-
-This is GenLayer's "Optimistic Democracy" in action.
-
-### 3. Realistic Demo Scenarios
-
-- **"Pay-per-query price API"** — Use CoinGecko URL, charge per price check
-- **"Paid GitHub analytics"** — Use GitHub API, summarize user profiles
-- **"News API with AI TL;DR"** — Use RSS feed URL, AI summarizes articles
+| Deploy succeeds | ✅ |
+| Initial state correct (8 view methods) | ✅ |
+| User can buy credits | ✅ |
+| Credits reflect correctly | ✅ |
+| AI-powered query returns summary | ✅ |
+| Credits deduct per query | ✅ |
+| Call count increments | ✅ |
+| Owner can grant free credits | ✅ |
+| Owner can update price | ✅ |
+| Owner can update URL prefix | ✅ |
+| New URL works correctly | ✅ |
+| Underpay rejected | ✅ |
+| Max credits cap enforced | ✅ |
+| No credits → query rejected | ✅ |
+| Non-owner admin calls rejected | ✅|
+| Withdraw works | ✅ |
 
 ---
 

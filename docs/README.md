@@ -649,7 +649,6 @@ git push origin main
 - 🔧 [GenVM Linter Docs](https://docs.genlayer.com/api-references/genlayer-linter)
 - 💧 [Testnet Faucet](https://testnet-faucet.genlayer.foundation/)
 - 📜 [x402 Protocol Spec](https://x402.org)
-- 🏆 [GenLayer Builder Program](https://portal.genlayer.foundation)
 
 ---
 

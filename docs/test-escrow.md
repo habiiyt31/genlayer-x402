@@ -22,6 +22,8 @@ Step-by-step testing guide for the X402Escrow contract — AI-verified freelance
 OPEN → FUNDED → SUBMITTED → APPROVED/DISPUTED → RESOLVED
 ```
 
+[Explorer for X402Escrow](https://explorer-studio.genlayer.com/address/0xA7672Ca106d13396a0B1EA0A40155DA68a0De3B8)
+
 ---
 
 ## 🏗️ Setup
@@ -52,22 +54,22 @@ Load `x402_escrow.py`, deploy with **6 arguments**:
 
 #### 1. `brief_title` (min 10 chars)
 ```
-Python HTTP Library Documentation Review
+Fetch and Display Public API Documentation
 ```
 
 #### 2. `brief_description` (min 80 chars)
 ```
-Review and document a Python HTTP library README covering installation instructions, basic usage examples, feature list, supported Python versions, and contribution guidelines for developers integrating the library into their projects.
+Deliver a publicly accessible documentation file from any public HTTP endpoint. The content should be readable text (markdown, JSON, or plain text) with meaningful information about a software project, library, or API.
 ```
 
 #### 3. `brief_acceptance_criteria` (min 80 chars)
 ```
-README must include installation instructions using pip. Must include basic usage examples with code snippets. Must list main library features. Must mention supported Python versions. Must include contribution or license information.
+Content must be accessible via HTTPS URL returning valid content. Content must be non-empty. Content must contain readable text describing a project or API. Content can be from any public source like GitHub, documentation sites, or public APIs.
 ```
 
 #### 4. `brief_deliverable_format` (min 30 chars)
 ```
-Markdown README file accessible via HTTPS URL on GitHub raw content
+Any publicly accessible HTTPS URL returning readable text content
 ```
 
 #### 5. `arbiter_addr`
@@ -81,6 +83,8 @@ Markdown README file accessible via HTTPS URL on GitHub raw content
 ```
 
 Click **Deploy** → copy contract address.
+
+> 💡 **Why this brief?** This brief is intentionally flexible to allow AI to APPROVE the work. For stricter briefs (which teach security), see "Strict Brief Example" section below.
 
 ---
 
@@ -139,20 +143,22 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `work_url`:
     ```
-    https://raw.githubusercontent.com/requests/requests/main/README.md
+    https://raw.githubusercontent.com/genlayerlabs/genlayer-project-boilerplate/main/README.md
     ```
   - `work_description`:
     ```
-    Comprehensive Python HTTP library README with installation via pip, multiple usage examples, full feature list, supported versions, and contribution guidelines. All acceptance criteria met.
+    Public documentation file from GitHub containing readable text describing the GenLayer project boilerplate with meaningful information about the codebase and setup instructions.
     ```
 - **Expected:**
   - Wait **60-120 seconds** (URL fetch + LLM evaluation + consensus)
-  - Returns: verdict string starting with `"APPROVED"` or `"DISPUTED"`
+  - Returns: verdict string starting with `"APPROVED"` 🎉
 
 **Important:** Open **Node Logs** panel during this call. You'll see:
 - Validators fetching GitHub README
 - Each validator runs LLM with full brief + content
 - Consensus: do all verdicts agree (APPROVED or DISPUTED)?
+
+> 💡 **Note:** This brief + URL combination is designed to get APPROVED verdict. For testing DISPUTED behavior, use the strict brief example below.
 
 #### Step 15: Verify State Change
 
@@ -283,6 +289,53 @@ This proves you can't spam the safety valve.
 
 ## 🧪 Part 5: Alternative Scenario — Client Cancel
 
+To intentionally test DISPUTED flow and force_release safety mechanism, **deploy a new contract** with a strict brief that won't match the work.
+
+### Strict Brief Deploy Params
+
+Load `x402_escrow.py` fresh, deploy with these args:
+
+#### 1. `brief_title`
+```
+Bitcoin Price Fetcher Python Script Original Development
+```
+
+#### 2. `brief_description`
+```
+Build an original Python script from scratch that fetches the current Bitcoin price from the CoinGecko API and prints it in a formatted output with timestamp, 24-hour change percentage, and market capitalization data.
+```
+
+#### 3. `brief_acceptance_criteria`
+```
+Script must be original code written by the freelancer. Must run without errors on Python 3.10 or higher. Must use the requests library. Must print price in USD format. Must include error handling. Must be submitted as a raw Python file, not documentation.
+```
+
+#### 4. `brief_deliverable_format`
+```
+Single original Python file named btc_price.py committed to a public GitHub repository
+```
+
+#### 5. `arbiter_addr`: Arbiter's address
+#### 6. `max_claim_attempts`: `3`
+
+### Submit Mismatching Work (For DISPUTED)
+
+**[Freelancer]**
+
+Submit a README instead of Python script:
+
+- `work_url`: `https://raw.githubusercontent.com/requests/requests/main/README.md`
+- `work_description`: `Submitted work`
+
+**Expected:** AI returns `DISPUTED` — "submission is documentation, not original Python script as required"
+
+Now you can demonstrate all 3 resolution paths:
+- Client override (`client_approve`)
+- Arbiter rule (`arbiter_rule`)
+- Force release (3x `freelancer_claim_attempt` + `force_release`)
+
+---
+
 Test cancellation BEFORE freelancer submits.
 
 Deploy a new contract, then:
@@ -386,6 +439,57 @@ On any state except DISPUTED:
 
 ---
 
+---
+
+## 🧪 Part 7: Strict Brief Example (For Testing DISPUTED)
+
+To intentionally test DISPUTED flow and force_release safety mechanism, **deploy a new contract** with a strict brief that won't match the work.
+
+### Strict Brief Deploy Params
+
+Load `x402_escrow.py` fresh, deploy with these args:
+
+#### 1. `brief_title`
+```
+Bitcoin Price Fetcher Python Script Original Development
+```
+
+#### 2. `brief_description`
+```
+Build an original Python script from scratch that fetches the current Bitcoin price from the CoinGecko API and prints it in a formatted output with timestamp, 24-hour change percentage, and market capitalization data.
+```
+
+#### 3. `brief_acceptance_criteria`
+```
+Script must be original code written by the freelancer. Must run without errors on Python 3.10 or higher. Must use the requests library. Must print price in USD format. Must include error handling. Must be submitted as a raw Python file, not documentation.
+```
+
+#### 4. `brief_deliverable_format`
+```
+Single original Python file named btc_price.py committed to a public GitHub repository
+```
+
+#### 5. `arbiter_addr`: Arbiter's address
+#### 6. `max_claim_attempts`: `3`
+
+### Submit Mismatching Work (For DISPUTED)
+
+**[Freelancer]**
+
+Submit a README instead of Python script:
+
+- `work_url`: `https://raw.githubusercontent.com/requests/requests/main/README.md`
+- `work_description`: `Submitted work`
+
+**Expected:** AI returns `DISPUTED` — "submission is documentation, not original Python script as required"
+
+Now you can demonstrate all 3 resolution paths:
+- Client override (`client_approve`)
+- Arbiter rule (`arbiter_rule`)
+- Force release (3x `freelancer_claim_attempt` + `force_release`)
+
+---
+
 ## 🎯 Quick Demo (10 Minutes) — Force Release Flow
 
 The most impressive demo, showing anti-lockup mechanism:
@@ -469,83 +573,26 @@ Verify all state transitions work correctly:
 
 | Test | Status |
 |---|---|
-| Deploy with structured brief (200+ chars) | ☐ |
-| Deploy rejects short briefs | ☐ |
-| Deploy rejects max_claim_attempts < 3 | ☐ |
-| Initial state view methods (11) | ☐ |
-| Client funds escrow | ☐ |
-| Freelancer submits work | ☐ |
-| AI evaluates and sets state | ☐ |
-| **Happy path:** release_payment (if APPROVED) | ☐ |
-| **Alt 1:** client_approve works in DISPUTED | ☐ |
-| **Alt 2:** arbiter_rule(true) → freelancer paid | ☐ |
-| **Alt 2:** arbiter_rule(false) → client refund | ☐ |
-| **Alt 3:** force_release after 3 attempts | ☐ |
-| force_release prematurely rejected | ☐ |
-| client_cancel works in FUNDED state | ☐ |
-| client_cancel rejected in SUBMITTED | ☐ |
-| Non-client fund rejected | ☐ |
-| Non-freelancer submit rejected | ☐ |
-| Non-arbiter arbitrate rejected | ☐ |
-| release_payment before APPROVED rejected | ☐ |
-| claim_attempt outside DISPUTED rejected | ☐ |
-
----
-
-## 💡 Pro Tips
-
-### 1. Prepare Clipboard Content
-
-Save these in a notepad for easy demo:
-
-```
-CLIENT_ADDRESS: 0x______
-FREELANCER_ADDRESS: 0x______
-ARBITER_ADDRESS: 0x______
-
-WORK_URL: https://raw.githubusercontent.com/requests/requests/main/README.md
-WORK_DESCRIPTION: Comprehensive Python HTTP library README with installation via pip...
-```
-
-### 2. Use Summary JSON
-
-`get_summary()` returns all contract state in one call:
-
-```json
-{
-  "state": "APPROVED",
-  "client": "0x...",
-  "freelancer": "0x...",
-  "arbiter": "0x...",
-  "amount_wei": 5000000000000000000,
-  "work_url": "https://...",
-  "claim_attempts": 0,
-  "max_claim_attempts": 3
-}
-```
-
-Screenshot this at key moments for proof.
-
-### 3. Recording Demos
-
-For Builder Program:
-- Record with OBS/Loom
-- 10-minute walkthrough showing all 3 fallback mechanisms
-- Emphasize the **anti-lockup safety valve** — this is your unique value prop
-
----
-
-## 🎬 Demo Script Highlights
-
-Here's what to say at each step for maximum impact:
-
-> **Step 1 (Deploy):** "I'm deploying an escrow contract with a 200+ character structured brief. Notice the 4 required fields — title, description, acceptance criteria, deliverable format. This prevents trivial briefs like 'make me a website'."
->
-> **Step 3 (Fund):** "Client locks 5 GEN in the contract and assigns a specific freelancer. Funds are in the contract ghost wallet now."
->
-> **Step 4 (Submit):** "Freelancer submits their work URL. GenLayer's LLM validators will fetch this URL, compare content against the brief, and reach consensus on whether it meets all criteria. This takes 60-90 seconds of real AI work."
->
-> **Step 9 (Force release):** "Key feature: if AI disputes AND client goes offline AND arbiter is unresponsive — the freelancer can still unlock funds after logging 3 claim attempts. Funds **cannot be permanently stuck**. This was a direct response to feedback during my review."
+| Deploy with structured brief (200+ chars) | ✅ |
+| Deploy rejects short briefs | ✅ |
+| Deploy rejects max_claim_attempts < 3 | ✅|
+| Initial state view methods (11) | ✅ |
+| Client funds escrow | ✅ |
+| Freelancer submits work | ✅ |
+| AI evaluates and sets state | ✅ |
+| **Happy path:** release_payment (if APPROVED) | ✅ |
+| **Alt 1:** client_approve works in DISPUTED | ✅ |
+| **Alt 2:** arbiter_rule(true) → freelancer paid | ✅ |
+| **Alt 2:** arbiter_rule(false) → client refund | ✅ |
+| **Alt 3:** force_release after 3 attempts | ✅ |
+| force_release prematurely rejected | ✅ |
+| client_cancel works in FUNDED state | ✅ |
+| client_cancel rejected in SUBMITTED | ✅ |
+| Non-client fund rejected | ✅ |
+| Non-freelancer submit rejected | ✅ |
+| Non-arbiter arbitrate rejected | ✅ |
+| release_payment before APPROVED rejected | ✅ |
+| claim_attempt outside DISPUTED rejected | ✅ |
 
 ---
 
