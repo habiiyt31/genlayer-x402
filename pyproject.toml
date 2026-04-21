@@ -1,0 +1,14 @@
+[project]
+name = "genlayer-x402"
+version = "0.1.0"
+description = "x402 contract library for GenLayer"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "habibiiyt" }]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["genlayer_x402"]

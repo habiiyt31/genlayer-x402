@@ -7,7 +7,10 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+*.whl
 .pytest_cache/
+
+# Virtual env
 .venv/
 venv/
 env/
@@ -27,7 +30,11 @@ pnpm-debug.log*
 .idea/
 *.swp
 *.swo
+
+# OS
 .DS_Store
+.DS_Store?
+Thumbs.db
 
 # GenLayer
 .genlayer/
@@ -41,3 +48,7 @@ pnpm-debug.log*
 # Deployment artifacts
 deploy/deployed_addresses.json
 deployments/
+
+# Coverage
+.coverage
+htmlcov/
