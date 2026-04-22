@@ -11,28 +11,6 @@ A library of **4 production-ready Intelligent Contracts** that bring the [HTTP 4
 
 ---
 
-## Table of Contents
-
-- [What is this?](#what-is-this)
-- [The 4 Contracts](#the-4-contracts)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Getting the Contract Files](#getting-the-contract-files)
-- [Deployment](#deployment)
-  - [Method 1: CLI Direct (Per Contract)](#method-1-cli-direct-per-contract)
-  - [Method 2: GenLayer Studio](#method-3-genlayer-studio)
-- [Interacting with Contracts](#interacting-with-deployed-contracts)
-- [Contract API Reference](#contract-api-reference)
-- [Use Case Examples](#use-case-examples)
-- [Security Features](#security-features)
-- [Linting](#linting)
-- [Testing Guides](#testing-guides)
-- [Project Structure](#project-structure)
-- [Troubleshooting](#troubleshooting)
-- [Resources](#resources)
-
----
-
 ## What is this?
 
 Traditional paid APIs rely on centralized servers with API keys — fragile, censorable, and opaque. `genlayer-x402` moves the payment gate **fully on-chain**:
@@ -85,42 +63,49 @@ npm install -g genlayer
 
 ## Getting the Contract Files
 
-Since GenLayer contracts run as **single Python files** in GenVM, you need to copy the contract files to your project before deploying.
+GenLayer contracts run as **single Python files**, so you need to copy them into your project before deploying.
 
-### Find where the package is installed
+### Recommended (CLI)
 
-```bash
-python -c "import genlayer_x402, os; print(os.path.dirname(genlayer_x402.__file__))"
-```
-
-### Copy contracts to your project
+After installing the package, run:
 
 ```bash
-# Copy all contracts at once
-python -c "
-import genlayer_x402, os, shutil
-src = os.path.dirname(genlayer_x402.__file__)
-os.makedirs('contracts', exist_ok=True)
-for f in ['x402_paywall', 'x402_metered', 'x402_subscription', 'x402_escrow']:
-    shutil.copy(f'{src}/{f}.py', f'contracts/{f}.py')
-    print(f'Copied {f}.py')
-"
+genlayer-x402 init
 ```
+This will create a contracts/ folder with all contracts:
 
-Or copy individually:
+contracts/
+├── x402_paywall.py
+├── x402_metered.py
+├── x402_subscription.py
+├── x402_escrow.py
+
+### Copy a single contract
 
 ```bash
-# Windows (PowerShell)
-python -c "import genlayer_x402,os; p=os.path.dirname(genlayer_x402.__file__); print(p)"
-# Then: copy <path>\x402_paywall.py contracts\
-
-# macOS/Linux
-cp $(python -c "import genlayer_x402,os; print(os.path.dirname(genlayer_x402.__file__))")/x402_paywall.py contracts/
+genlayer-x402 paywall
+genlayer-x402 metered
+genlayer-x402 subscription
+genlayer-x402 escrow
 ```
-
-> ⚠️ **Important:** Each contract file is self-contained. You only need to copy the contract(s) you want to deploy — no other dependencies required.
-
 ---
+### List available contracts
+
+```bash
+genlayer-x402 list
+```
+---
+
+## 🧰 CLI Usage
+
+| Command | Description |
+|--------|------------|
+| `genlayer-x402 init` | Copy all contracts |
+| `genlayer-x402 paywall` | Copy paywall contract |
+| `genlayer-x402 metered` | Copy metered contract |
+| `genlayer-x402 subscription` | Copy subscription contract |
+| `genlayer-x402 escrow` | Copy escrow contract |
+| `genlayer-x402 list` | Show available contracts |
 
 ## Deployment
 
@@ -139,6 +124,20 @@ GenLayer uses **GEN** as its native token, denominated in **wei**:
 | 5 GEN | `5000000000000000000` |
 
 > 💡 In GenLayer Studio, the Value field auto-multiplies by 10¹⁸. But **constructor arguments** must be entered as full wei values.
+
+---
+
+## Testing Guides
+
+Each contract has a detailed step-by-step testing guide in the `docs/` folder:
+
+| Contract | Guide | Est. Time |
+|---|---|---|
+| Overview + Setup | [docs/TESTING.md](docs/TESTING.md) | 5 min |
+| X402Paywall | [docs/test-paywall.md](docs/test-paywall.md) | ~20 min |
+| X402Metered | [docs/test-metered.md](docs/test-metered.md) | ~25 min |
+| X402Subscription | [docs/test-subscription.md](docs/test-subscription.md) | ~30 min |
+| X402Escrow | [docs/test-escrow.md](docs/test-escrow.md) | ~40 min |
 
 ---
 
@@ -374,20 +373,6 @@ genvm-lint check contracts/x402_metered.py
 genvm-lint check contracts/x402_subscription.py
 genvm-lint check contracts/x402_escrow.py
 ```
----
-
-## Testing Guides
-
-Each contract has a detailed step-by-step testing guide in the `docs/` folder:
-
-| Contract | Guide | Est. Time |
-|---|---|---|
-| Overview + Setup | [docs/TESTING.md](docs/TESTING.md) | 5 min |
-| X402Paywall | [docs/test-paywall.md](docs/test-paywall.md) | ~20 min |
-| X402Metered | [docs/test-metered.md](docs/test-metered.md) | ~25 min |
-| X402Subscription | [docs/test-subscription.md](docs/test-subscription.md) | ~30 min |
-| X402Escrow | [docs/test-escrow.md](docs/test-escrow.md) | ~40 min |
-
 ---
 
 ## Troubleshooting

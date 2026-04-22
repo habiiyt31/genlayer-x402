@@ -1,11 +1,9 @@
-from .x402_metered import X402Metered
-from .x402_escrow import X402Escrow
-from .x402_paywall import X402Paywall
-from .x402_subscription import X402Subscription
+import os
 
-__all__ = [
-    "X402Metered",
-    "X402Escrow",
-    "X402Paywall",
-    "X402Subscription",
-]
+_PACKAGE_PATH = os.path.dirname(__file__)
+
+def get_package_path():
+    return _PACKAGE_PATH
+
+def list_contracts():
+    return ["paywall", "metered", "subscription", "escrow"]

@@ -1,8 +1,8 @@
 [project]
 name = "genlayer-x402"
-version = "0.2.1"
-description = "x402 payment contract library for GenLayer — Paywall, Metered, Subscription, Escrow"
-readme = "README.md"
+version = "0.2.2"
+description = "x402 payment contract template library for GenLayer — Paywall, Metered, Subscription, Escrow"
+readme = { file = "README_PYPI.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
 
 authors = [
@@ -29,6 +29,9 @@ classifiers = [
 
 [project.urls]
 Repository = "https://github.com/habiiyt31/genlayer-x402"
+
+[project.scripts]
+genlayer-x402 = "genlayer_x402.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
