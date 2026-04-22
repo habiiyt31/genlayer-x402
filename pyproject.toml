@@ -1,10 +1,34 @@
 [project]
 name = "genlayer-x402"
-version = "0.1.0"
-description = "x402 contract library for GenLayer"
+version = "0.2.1"
+description = "x402 payment contract library for GenLayer — Paywall, Metered, Subscription, Escrow"
 readme = "README.md"
 requires-python = ">=3.8"
-authors = [{ name = "habibiiyt" }]
+
+authors = [
+  { name = "habibiiyt", email = "habiiyt31@gmail.com" }
+]
+
+license = { text = "MIT" }
+
+keywords = [
+  "genlayer",
+  "x402",
+  "smart-contract",
+  "blockchain",
+  "payment",
+  "web3"
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Repository = "https://github.com/habiiyt31/genlayer-x402"
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -12,3 +36,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["genlayer_x402"]
+
+[tool.setuptools.package-data]
+genlayer_x402 = ["*.py"]

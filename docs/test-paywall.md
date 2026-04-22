@@ -16,8 +16,6 @@ Step-by-step testing guide for the X402Paywall contract — a one-time payment g
 
 **Total methods:** 14 (8 view + 6 write)
 
-[Explorer for X402Paywall](https://explorer-studio.genlayer.com/address/0xAA64689f85fE36C606338167ce7b8778329500e6)
-
 ---
 
 ## 🏗️ Setup
@@ -29,11 +27,28 @@ Step-by-step testing guide for the X402Paywall contract — a one-time payment g
 | **Owner** | Deploys contract, can change price and withdraw |
 | **User** | Pays for access and reads protected data |
 
-### Deploy Parameters
+### 1. Get the contract file
+
+```bash
+python -c "
+import genlayer_x402, os, shutil
+src = os.path.dirname(genlayer_x402.__file__)
+shutil.copy(f'{src}/x402_paywall.py', 'contracts/x402_paywall.py')
+print('Copied x402_paywall.py')
+"
+```
+
+### 2. Lint before deploying
+
+```bash
+genvm-lint check contracts/x402_paywall.py
+```
+
+### 3. Deploy Parameters
 
 **[Switch to Owner account]**
 
-Load `x402_paywall.py`, click **Deploy**, fill constructor:
+Load `contracts/x402_paywall.py`, click **Deploy**, fill constructor:
 
 | Field | Value | Meaning |
 |---|---|---|
@@ -57,7 +72,7 @@ Click **Deploy** → copy contract address.
 | 3 | `get_data_url()` | - | `"https://api.github.com/users/octocat"` |
 | 4 | `get_total_revenue()` | - | `"0"` |
 | 5 | `get_contract_balance()` | - | `"0"` |
-| 6 | `has_access(user_address)` | User's address | `false` (belum bayar) |
+| 6 | `has_access(user_address)` | User's address | `false` |
 | 7 | `get_payment(user_address)` | User's address | `"0"` |
 | 8 | `get_402_info()` | - | JSON metadata |
 
@@ -106,16 +121,13 @@ Click **Deploy** → copy contract address.
 {"login":"octocat","id":583231,"node_id":"...","avatar_url":"...","name":"The Octocat",...}
 ```
 
-**Pro tip:** Open the **Node Logs** panel during this call. You'll see:
-- Multiple validators fetching the same URL
-- Validators comparing responses for consensus
-- Final result committed on-chain
+> 💡 Open the **Node Logs** panel during this call. You'll see multiple validators fetching the same URL, comparing responses, and committing final result on-chain.
 
 ---
 
 ### Part 4: Test Access Persistence (Security Feature) 🔒
 
-This proves the `access_granted` flag fix from v0.2.0.
+This proves the `access_granted` explicit flag — price updates never revoke existing buyers.
 
 #### Step 15: Owner Updates Price
 
@@ -127,8 +139,7 @@ This proves the `access_granted` flag fix from v0.2.0.
 
 #### Step 16: Verify Price Changed
 
-- **Method:** `get_price()`
-- **Expected:** `"5000000000000000000"` ✅
+- `get_price()` → `"5000000000000000000"` ✅
 
 #### Step 17: Verify User's Access NOT Revoked
 
@@ -136,7 +147,7 @@ This proves the `access_granted` flag fix from v0.2.0.
 - **Input:** User's address (who paid 1 GEN earlier)
 - **Expected:** `true` ✅
 
-**Why this matters:** Even though price jumped from 1 GEN to 5 GEN, the user who paid before still has access. This is the explicit `access_granted` flag working — prevents retroactive access revocation.
+**Why this matters:** Even though price jumped from 1 GEN to 5 GEN, the user who paid before still has access. This is the explicit `access_granted` flag — prevents retroactive access revocation.
 
 #### Step 18: Verify User Can Still Fetch Data
 
@@ -155,7 +166,7 @@ This proves the `access_granted` flag fix from v0.2.0.
 - **Input:** `new_url`: `https://api.github.com/users/torvalds`
 - **Expected:** ✅ Success
 
-Verify with `get_data_url()` → should show new URL.
+Verify: `get_data_url()` → should show new URL.
 
 #### Step 20: `withdraw(amount)` — Partial Withdraw
 
@@ -170,7 +181,6 @@ Verify with `get_data_url()` → should show new URL.
 #### Step 22: `withdraw_all()` — Withdraw Rest
 
 - **Method:** `withdraw_all`
-- **Input:** (none)
 - **Expected:** ✅ Success
 
 #### Step 23: Verify Empty Contract
@@ -180,8 +190,6 @@ Verify with `get_data_url()` → should show new URL.
 ---
 
 ### Part 6: Error Handling
-
-Test assertions to verify security.
 
 #### Step 24: Non-owner Tries to Change Price
 
@@ -195,15 +203,15 @@ Test assertions to verify security.
 
 **[User account]**
 
-- **Method:** `withdraw` or `withdraw_all`
+- **Method:** `withdraw_all`
 - **Expected:** ❌ ERROR: `"x402: Only owner can withdraw"`
 
 #### Step 26: Insufficient Payment
 
-**[Switch to a new account that hasn't paid, or deploy new contract]**
+**[New account that hasn't paid]**
 
 - **Method:** `pay_for_access`
-- **Value (GEN):** `0` (tries to pay 0)
+- **Value (GEN):** `0`
 - **Expected:** ❌ ERROR: `"x402: Insufficient payment..."`
 
 #### Step 27: Fetch Data Without Paying
@@ -218,7 +226,7 @@ Test assertions to verify security.
 **[Owner, when contract is empty]**
 
 - **Method:** `withdraw`
-- **Input:** `amount`: `1000000000000000000` (1 GEN)
+- **Input:** `amount`: `1000000000000000000`
 - **Expected:** ❌ ERROR: `"x402: Insufficient contract balance..."`
 
 #### Step 29: Withdraw All When Balance Is Zero
@@ -232,20 +240,18 @@ Test assertions to verify security.
 
 ## 🎯 Quick Demo (5 Minutes)
 
-For presentation/demo, focus on these 8 steps:
-
 ```
 [Owner]
 1. Deploy with price_wei=1000000000000000000 (1 GEN)
 
 [User]
 2. has_access(user) → false
-3. pay_for_access() Value: 1 → success
+3. pay_for_access()  Value: 1 → ✅
 4. has_access(user) → true ✅
 5. get_protected_data() → JSON from GitHub API
 
 [Owner]
-6. update_price(new=5000000000000000000) → success
+6. update_price(5000000000000000000) → ✅
 7. has_access(user) → still true ✅ (no revoke!)
 8. withdraw_all() → 1 GEN transferred to owner
 ```
@@ -275,8 +281,6 @@ For presentation/demo, focus on these 8 steps:
 | Insufficient payment rejected | ✅ |
 | Access required for data | ✅ |
 | Over-withdraw rejected | ✅ |
-
-Tick each as you go through the test.
 
 ---
 
