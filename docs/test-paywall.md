@@ -286,5 +286,4 @@ Verify: `get_data_url()` → should show new URL.
 
 ## 🔗 Back
 
-← [Testing Overview](./TESTING.md)
 ← [Main README](../README.md)

@@ -20,35 +20,6 @@ Step-by-step testing guide for the X402Escrow contract — AI-verified freelance
 
 ---
 
-## 🏗️ Setup
-
-### Accounts Needed
-
-| Role | Description |
-|---|---|
-| **Client** | Deploys, funds escrow, can approve/cancel |
-| **Freelancer** | Submits work, can claim/force release |
-| **Arbiter** | Neutral 3rd party, resolves disputes |
-
-### 1. Get the contract file
-
-```bash
-python -c "
-import genlayer_x402, os, shutil
-src = os.path.dirname(genlayer_x402.__file__)
-shutil.copy(f'{src}/x402_escrow.py', 'contracts/x402_escrow.py')
-print('Copied x402_escrow.py')
-"
-```
-
-### 2. Lint before deploying
-
-```bash
-genvm-lint check contracts/x402_escrow.py
-```
-
-### 3. Deploy Parameters
-
 **[Switch to Client account]**
 
 Load `contracts/x402_escrow.py`, deploy with:

@@ -27,24 +27,6 @@ Step-by-step testing guide for the X402Subscription contract — periodic quota-
 | **Owner** | Deploys, configures, grants free access |
 | **Subscriber** | Buys subscriptions and consumes quota |
 
-### 1. Get the contract file
-
-```bash
-python -c "
-import genlayer_x402, os, shutil
-src = os.path.dirname(genlayer_x402.__file__)
-shutil.copy(f'{src}/x402_subscription.py', 'contracts/x402_subscription.py')
-print('Copied x402_subscription.py')
-"
-```
-
-### 2. Lint before deploying
-
-```bash
-genvm-lint check contracts/x402_subscription.py
-```
-
-### 3. Deploy Parameters
 
 **[Switch to Owner account]**
 

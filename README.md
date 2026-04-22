@@ -133,7 +133,6 @@ Each contract has a detailed step-by-step testing guide in the `docs/` folder:
 
 | Contract | Guide | Est. Time |
 |---|---|---|
-| Overview + Setup | [docs/TESTING.md](docs/TESTING.md) | 5 min |
 | X402Paywall | [docs/test-paywall.md](docs/test-paywall.md) | ~20 min |
 | X402Metered | [docs/test-metered.md](docs/test-metered.md) | ~25 min |
 | X402Subscription | [docs/test-subscription.md](docs/test-subscription.md) | ~30 min |

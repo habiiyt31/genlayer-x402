@@ -19,33 +19,12 @@ Step-by-step testing guide for the X402Metered contract — credit-based pay-per
 
 ---
 
-## 🏗️ Setup
-
 ### Accounts Needed
 
 | Role | Description |
 |---|---|
 | **Owner** | Deploys, configures URL/price, withdraws |
 | **User** | Buys credits, executes queries |
-
-### 1. Get the contract file
-
-```bash
-python -c "
-import genlayer_x402, os, shutil
-src = os.path.dirname(genlayer_x402.__file__)
-shutil.copy(f'{src}/x402_metered.py', 'contracts/x402_metered.py')
-print('Copied x402_metered.py')
-"
-```
-
-### 2. Lint before deploying
-
-```bash
-genvm-lint check contracts/x402_metered.py
-```
-
-### 3. Deploy Parameters
 
 **[Switch to Owner account]**
 
@@ -306,5 +285,4 @@ Exhaust credits first, then:
 
 ## 🔗 Back
 
-← [Testing Overview](./TESTING.md)
 ← [Main README](../README.md)
